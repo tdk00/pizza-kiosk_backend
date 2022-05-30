@@ -11,6 +11,7 @@ class Admin_kitchen_model extends CI_Model
 		$this->db->select('*');
 		$this->db->from('orders');
 		$this->db->where('status', 1); // status 1 - hazirlanir statusunda olan sifarislerdir
+		$this->db->order_by('id', 'desc');
 		$query = $this->db->get();
 		return $query->result_array();
 	}
