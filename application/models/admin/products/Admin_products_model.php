@@ -61,6 +61,27 @@ class Admin_products_model extends CI_Model
 		return $this->db->insert_id();
 	}
 
+	public function updateProductSize( $name_az = "", $name_en = "", $name_ru = "", $price = 0, $barkod = "", $product_id = 0, $size_id = 0 )
+	{
+		$data = [
+			"name_az" => $name_az,
+			"name_en" => $name_en,
+			"name_ru" => $name_ru,
+			"price" => $price,
+			"barkod" => $barkod,
+			"product_id" => $product_id
+		];
+
+		$this->db->where('id', $size_id );
+		$this->db->update('product_sizes', $data);
+		$this->db->trans_complete();
+		if ($this->db->trans_status() === FALSE)
+		{
+			return false;
+		}
+		return true;
+	}
+
 	public function updateProduct( $product_id = 0, $name_az = "", $name_en = "", $name_ru = "", $product_category_id = 0, $image = "" )
 	{
 		$data = [
@@ -107,6 +128,13 @@ class Admin_products_model extends CI_Model
 	{
 		$this->db->delete('product_sizes', array('product_id' => $product_id) );
 		return true;
+	}
+
+	public function deleteSize( $sizeId = 0 )
+	{
+		$this->db->delete( 'product_sizes', array('id' => $sizeId ) );
+		return true;
+
 	}
 
 

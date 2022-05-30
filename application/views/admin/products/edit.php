@@ -101,6 +101,7 @@
 									</div>
 									<div class="card-body">
 										<div class="row">
+											<input type="hidden" value="<?= $sizeValue['id'] ?>" name="sizes[<?= ( $sizeKey + 1 ) ?>][size_id]">
 											<div class="col-4">
 												<label for="product_name"> Ölçü adı ( Az ) </label>
 												<input value="<?= $sizeValue['name_az'] ?>" type="text" name="sizes[<?= ( $sizeKey + 1 ) ?>][size_name_az]" class="form-control" required>
@@ -186,6 +187,8 @@
 			'</div>		' +
 			'<div class="card-body">' +
 			'<div class="row">' +
+
+			'<input type="hidden" value="0" name="sizes['+ ( $("#sizes .card").length + 1 ) + '][size_id]">' +
 			'<div class="col-4">' +
 			'<label for="product_name"> Ölçü adı ( Az )</label>' +
 			'<input type="text" name="sizes['+ ( $("#sizes .card").length + 1 ) + '][size_name_az]" class="form-control"  required>' +

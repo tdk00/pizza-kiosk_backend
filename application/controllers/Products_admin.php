@@ -196,17 +196,46 @@ class Products_admin extends CI_Controller
 
 			if( $updated > 0 )
 			{
-				$this->AdminProductsModel->deleteAllProductSizes( $id );
+//				$this->AdminProductsModel->deleteAllProductSizes( $id );
+				$databaseSizesArray = $this->AdminProductsModel->getSizesByProductId( $id ); // database-den mehsulun size-lari goturulur
+
+				foreach ($databaseSizesArray as $dbSize)
+				{
+					if( $this->sizeMustRemove( $dbSize['id'], $product_sizes_array ) ) // eger post'nan gelen data icerisinde - databaseden gelen sizelerdan hansisa yoxdursa demeli silinib
+					{
+						$this->AdminProductsModel->deleteSize( $dbSize['id'] );
+					}
+				}
+
+
 				foreach ( $product_sizes_array as $product_size )
 				{
-					$this->AdminProductsModel->insertProductSize(
-						$product_size['size_name_az'],
-						$product_size['size_name_en'],
-						$product_size['size_name_ru'],
-						$product_size['size_price'],
-						$product_size['size_barkod'],
-						$id
-					);
+					if( $product_size['size_id'] == 0 )
+					{
+						$this->AdminProductsModel->insertProductSize(
+							$product_size['size_name_az'],
+							$product_size['size_name_en'],
+							$product_size['size_name_ru'],
+							$product_size['size_price'],
+							$product_size['size_barkod'],
+							$id
+						);
+					}
+					else
+					{
+						$size_id = $product_size['size_id'];
+						$this->AdminProductsModel->updateProductSize(
+							$product_size['size_name_az'],
+							$product_size['size_name_en'],
+							$product_size['size_name_ru'],
+							$product_size['size_price'],
+							$product_size['size_barkod'],
+							$id,
+							$size_id );
+					}
+
+
+
 				}
 
 				redirect("products_admin", 'refresh');
@@ -253,5 +282,15 @@ class Products_admin extends CI_Controller
 		}
 
 		return false;
+	}
+
+	private function sizeMustRemove( $sizeId, $sizesPostData ){
+		foreach ($sizesPostData as $sizeFromPost) {
+			if( $sizeId == $sizeFromPost['size_id'] )
+				{
+					return false;
+				}
+			}
+		return true;
 	}
 }
