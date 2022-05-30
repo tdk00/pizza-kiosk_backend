@@ -34,8 +34,24 @@ class Orders_model extends CI_Model
 		$query = $this->db->get();
 		return $query->result_array();
 	}
+	public function getOrderItems( $orderId = 0 ){
+		$query =  $this->db->query(
+			'SELECT orders.*, shopping_cart_products.product_count, product_sizes.barkod as barkod, SUM(shopping_cart_products.product_count) as count, product_sizes.price as price FROM `orders` LEFT JOIN shopping_cart_products ON shopping_cart_products.session_id = orders.session_id JOIN product_sizes ON product_sizes.id = shopping_cart_products.size_id WHERE orders.id = ' . $orderId . ' Group By product_sizes.barkod;'
+		);
+
+		return $query->result_array();
+	}
+
+	public function getOrderExtras( $orderId = 0 ){
+		$query =  $this->db->query(
+			'SELECT orders.*, shopping_cart_extras.extra_count, shopping_cart_extras.extra_count,  extras.barkod as barkod, SUM( shopping_cart_extras.extra_count - shopping_cart_extras.extra_default_count ) as count, extras.price as price FROM `orders` LEFT JOIN shopping_cart_extras ON shopping_cart_extras.session_id = orders.session_id JOIN extras ON shopping_cart_extras.extra_id = extras.id WHERE  shopping_cart_extras.extra_default_count < shopping_cart_extras.extra_count AND orders.id = ' . $orderId . ' Group By extras.barkod;'
+		);
+
+		return $query->result_array();
+	}
 
 
 
 }
+
 ?>

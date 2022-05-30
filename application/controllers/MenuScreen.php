@@ -85,12 +85,24 @@ class MenuScreen extends RestController {
 
 		foreach ( $products as $productKey => $productValue )
 		{
+			$olymposPrice = $this->getOlymposPrice( $productValue['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$products[$productKey]['price'] = $olymposPrice;
+				$productValue['price'] = $olymposPrice;
+			}
 			$products[ $productKey ][ 'extras' ] = $this->ShoppingCartModel->getSCProductExtras( $productValue [ 'shopping_cart_product_id' ] );
 			$total += $this->calculateShoppingCartTotal( $productValue['price'], $productValue['product_count'], $products[ $productKey ][ 'extras' ]);
 		}
 
 		foreach ( $products as $productKey => $productValue )
 		{
+			$olymposPrice = $this->getOlymposPrice( $productValue['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$products[$productKey]['price'] = $olymposPrice;
+				$productValue['price'] = $olymposPrice;
+			}
 			$products[ $productKey ][ 'extras' ] = $this->ShoppingCartModel->getSCProductExtras( $productValue [ 'shopping_cart_product_id' ] );
 			$products [ $productKey ] [ 'price_including_extras' ] = $this->calculatePriceIncludingExtras( $productValue['price'], $products[ $productKey ][ 'extras' ]);
 			$products [ $productKey ] [ 'total' ] = $total;
@@ -156,8 +168,14 @@ class MenuScreen extends RestController {
 	private function calculatePriceIncludingExtras( $productPrice = 0, $extrasArray = [])
 	{
 		$productPrice = $productPrice * 100;
-		foreach ( $extrasArray as $extra )
+		foreach ( $extrasArray as $extraKey => $extra )
 		{
+			$olymposPrice = $this->getOlymposPrice( $extra['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$extrasArray[ $extraKey ]['price'] = $olymposPrice;
+				$extra['price'] = $olymposPrice;
+			}
 			if( $extra['extra_count'] >= $extra['extra_default_count'] )
 			{
 				$productPrice += ( $extra['extra_count'] -  $extra['extra_default_count'] ) * $extra['price'] * 100 ;
@@ -169,13 +187,54 @@ class MenuScreen extends RestController {
 	private function calculateShoppingCartTotal( $productPrice = 0, $productCount = 0, $extrasArray = [])
 	{
 		$productPrice = $productPrice * 100;
-		foreach ( $extrasArray as $extra )
+		foreach ( $extrasArray as $extraKey => $extra )
 		{
+			$olymposPrice = $this->getOlymposPrice( $extra['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$extrasArray[ $extraKey ]['price'] = $olymposPrice;
+				$extra['price'] = $olymposPrice;
+			}
+			
 			if( $extra['extra_count'] >= $extra['extra_default_count'] )
 			{
 				$productPrice += (( $extra['extra_count'] -  $extra['extra_default_count'] ) * $extra['price'] * 100) ;
 			}
 		}
 		return ($productPrice / 100 ) * $productCount;
+	}
+	
+	private function getOlymposPrice( $barkod )
+	{
+//		return false;
+		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
+
+		$curl = curl_init($url);
+
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_HEADER, 0);
+
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+		$result = curl_exec($curl);
+		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+		curl_close($curl);
+
+		if( $httpcode == 200 )
+		{
+			$result = json_decode($result);
+			if( !empty( $result->items) )
+			{
+				if( !empty( $result->items[0]->fiyat) && $result->items[0]->fiyat > 0 )
+				{
+					return $result->items[0]->fiyat;
+				}
+			}
+
+		}
+
+
+		return false;
 	}
 }

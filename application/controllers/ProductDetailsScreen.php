@@ -34,6 +34,14 @@ class ProductDetailsScreen extends RestController {
 		foreach ($productsDetails as $detailKey => $detailValue)
 		{
 			$productSizes = $this->ProductModel->getProductSizesById( $lang, $product_id );
+			foreach ( $productSizes as $sizeKey => $sizeValue )
+			{
+				$olymposPrice = $this->getOlymposPrice( $sizeValue['barkod'] );
+				if( $olymposPrice !== false)
+				{
+					$productSizes[ $sizeKey ]['price'] = (string)$olymposPrice;
+				}
+			}
 			$productsDetails[ $detailKey ] ['sizes'] = $productSizes;
 		}
 
@@ -84,6 +92,12 @@ class ProductDetailsScreen extends RestController {
 
 		foreach ( $productsDetails as $productsDetailKey => $productsDetailValue )
 		{
+			$olymposPrice = $this->getOlymposPrice( $productsDetailValue['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$productsDetails[ $productsDetailKey ]['price'] = $olymposPrice;
+				$productsDetailValue['price'] = $olymposPrice;
+			}
 			$productsDetails [ $productsDetailKey ] [ 'price_including_extras' ] = (string) $this->calculatePriceIncludingExtras( $productsDetailValue['price'], $extras );
 		}
 
@@ -200,8 +214,15 @@ class ProductDetailsScreen extends RestController {
 	private function calculatePriceIncludingExtras( $productPrice = 0, $extrasArray = [])
 	{
 		$productPrice = $productPrice * 100;
-		foreach ( $extrasArray as $extra )
+		foreach ( $extrasArray as $extraKey => $extra )
 		{
+			$olymposPrice = $this->getOlymposPrice( $extra['barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$extrasArray[ $extraKey ]['price'] = $olymposPrice;
+				$extra['price'] = $olymposPrice;
+			}
+
 			if( $extra['extra_count'] >= $extra['extra_default_count'] )
 			{
 				$productPrice += ( $extra['extra_count'] -  $extra['extra_default_count'] ) * $extra['price'] * 100 ;
@@ -209,6 +230,40 @@ class ProductDetailsScreen extends RestController {
 
 		}
 		return $productPrice / 100;
+	}
+
+	private function getOlymposPrice( $barkod )
+	{
+//		return false;
+		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
+
+		$curl = curl_init($url);
+
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_HEADER, 0);
+
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+		$result = curl_exec($curl);
+		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+		curl_close($curl);
+
+		if( $httpcode == 200 )
+		{
+			$result = json_decode($result);
+			if( !empty( $result->items) )
+			{
+				if( !empty( $result->items[0]->fiyat) && $result->items[0]->fiyat > 0 )
+				{
+					return $result->items[0]->fiyat;
+				}
+			}
+
+		}
+
+
+		return false;
 	}
 
 

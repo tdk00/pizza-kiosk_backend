@@ -31,7 +31,48 @@ class Orders extends RestController {
 
 			if( ! empty( $session_id ))
 			{
-				$this->OrdersModel->insert_order( $order_number, $total_amount, $payment_type, $session_id, $is_takeaway );
+				$orderId = $this->OrdersModel->insert_order( $order_number, $total_amount, $payment_type, $session_id, $is_takeaway );
+				if( $orderId > 0 )
+				{
+					$items = $this->OrdersModel->getOrderItems( $orderId );
+					$orderObj = new OlypmosOrder( $orderId );
+					foreach ( $items as $itemKey => $itemValue )
+					{
+						if( $itemValue['count'] == 0 || $itemValue['price'] == 0 )
+						{
+							continue;
+						}
+						$olymposPrice = $this->getOlymposPrice( $itemValue['barkod'] );
+						if( $olymposPrice !== false)
+						{
+							$items[ $itemKey ]['price'] = $olymposPrice;
+							$itemValue['price'] = $olymposPrice;
+						}
+						$orderItem = new OlypmosOrderItem( $itemValue['barkod'], $itemValue['count'], $itemValue['price'] );
+						$orderObj->addItemToOrder( $orderItem );
+
+					}
+					$extras = $this->OrdersModel->getOrderExtras( $orderId );
+					foreach ( $extras as $extraKey => $extraValue )
+					{
+						if( $extraValue['count'] == 0 || $extraValue['price'] == 0 )
+						{
+							continue;
+						}
+						$olymposPrice = $this->getOlymposPrice( $extraValue['barkod'] );
+						if( $olymposPrice !== false)
+						{
+							$extras[ $extraKey ]['price'] = $olymposPrice;
+							$extraValue['price'] = $olymposPrice;
+						}
+						$orderItem = new OlypmosOrderItem( $extraValue['barkod'], $extraValue['count'], $extraValue['price'] );
+						$orderObj->addItemToOrder( $orderItem );
+
+					}
+					$statusCode = $this->curPostRequestAddOrderToOlympos(json_encode([$orderObj]));
+
+					$this->response( [ 'orderObj' => json_encode([$orderObj]), 'orderNumber' => $order_number, 'orderId' => $orderId ], $statusCode );
+				}
 			}
 			else
 			{
@@ -75,4 +116,106 @@ class Orders extends RestController {
 		}
 	}
 
+	private function curPostRequestAddOrderToOlympos( $data )
+	{
+//		return 200;
+		/* Endpoint */
+		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/sepet/';
+
+		$curl = curl_init($url);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+		curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+		curl_exec($curl);
+		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+		curl_close($curl);
+
+
+		return $httpcode;
+	}
+
+	private function getOlymposPrice( $barkod )
+	{
+//		return false;
+		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
+
+		$curl = curl_init($url);
+
+		curl_setopt($curl, CURLOPT_URL, $url);
+		curl_setopt($curl, CURLOPT_HEADER, 0);
+
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+		$result = curl_exec($curl);
+		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+		curl_close($curl);
+
+		if( $httpcode == 200 )
+		{
+			$result = json_decode($result);
+			if( !empty( $result->items) )
+			{
+				if( !empty( $result->items[0]->fiyat) && $result->items[0]->fiyat > 0 )
+				{
+					return $result->items[0]->fiyat;
+				}
+			}
+
+		}
+
+
+		return false;
+	}
+
+}
+
+
+class OlypmosOrder implements JsonSerializable {
+	private $orderId;
+	private $pcode = "KPIZ";
+	private $sepet = [];
+
+
+	public function __construct( $orderId )
+	{
+		$this->orderId = $orderId;
+	}
+
+	public function addItemToOrder( $item ){
+		$this->sepet[] = $item;
+	}
+
+	public function jsonSerialize() {
+		return [
+			'orderId' => $this->orderId,
+			'pcode' => $this->pcode,
+			'sepet' => $this->sepet
+		];
+	}
+
+}
+
+class OlypmosOrderItem implements JsonSerializable{
+	private $barkod;
+	private $miktar;
+	private $fiyat;
+	public function __construct( $barkod, $miktar, $fiyat )
+	{
+		$this->barkod =  $barkod;
+		$this->miktar = $miktar;
+		$this->fiyat = $fiyat;
+	}
+
+	public function jsonSerialize() {
+		return [
+			'barkod' => $this->barkod,
+			'miktar' => $this->miktar,
+			'fiyat' => $this->fiyat
+		];
+	}
 }

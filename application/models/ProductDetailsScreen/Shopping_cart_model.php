@@ -101,8 +101,6 @@ class Shopping_cart_model extends CI_Model
 			$extra_default_count = $result[0]['extra_count'];
 		}
 
-		if( $extra_default_count > 0 )
-		{
 			$data = [
 				"session_id" => $session_id,
 				"extra_id" => $extra_id,
@@ -112,7 +110,7 @@ class Shopping_cart_model extends CI_Model
 			];
 			$this->db->insert('shopping_cart_extras', $data );
 			return $this->db->insert_id();
-		}
+
 
 
 
