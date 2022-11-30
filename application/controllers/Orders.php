@@ -86,6 +86,146 @@ class Orders extends RestController {
 		}
 	}
 
+
+	public function add_order_to_olympos_post( $orderId ) {
+
+
+		$order = $this->OrdersModel->getOrder( $orderId );
+		if( empty($order) ) {
+			return false;
+		}
+
+		$items = $this->OrdersModel->getOrderItemsNew( $orderId );
+		$orderObj = new OlypmosOrder( $orderId );
+
+		foreach ( $items as $itemKey => $itemValue )
+		{
+			if( $itemValue['item_count'] == 0 || $itemValue['item_total'] == 0 )
+			{
+				continue;
+			}
+			$olymposPrice = $this->getOlymposPrice( $itemValue['item_barkod'] );
+			if( $olymposPrice !== false)
+			{
+				$items[ $itemKey ]['item_price'] = $olymposPrice;
+				$itemValue['item_price'] = $olymposPrice;
+			}
+			$orderItem = new OlypmosOrderItem( $itemValue['item_barkod'], $itemValue['item_count'], $itemValue['item_price'] );
+			$orderObj->addItemToOrder( $orderItem );
+
+		}
+
+		$extras = $this->OrdersModel->getOrderExtrasNew( $orderId );
+		foreach ( $extras as $extraKey => $extraValue )
+		{
+			$extraValue['itemExtraCount'] = $extraValue['itemExtraCount'] - $extraValue['itemExtraDefaultCount'] > 0 ? $extraValue['itemExtraCount'] : 0;
+			if( $extraValue['itemExtraCount'] == 0 || $extraValue['extraPrice'] == 0 )
+			{
+				continue;
+			}
+			$olymposPrice = $this->getOlymposPrice( $extraValue['itemExtraBarcode'] );
+			if( $olymposPrice !== false)
+			{
+				$extras[ $extraKey ]['extraPrice'] = $olymposPrice;
+				$extraValue['extraPrice'] = $olymposPrice;
+			}
+			$orderItem = new OlypmosOrderItem( $extraValue['itemExtraBarcode'], $extraValue['itemExtraCount'], $extraValue['extraPrice'] );
+			$orderObj->addItemToOrder( $orderItem );
+
+		}
+		$responseArr = $this->curPostRequestAddOrderToOlympos(json_encode([$orderObj]));
+
+		$errorMsg = "";
+
+		if( $responseArr['http_code'] != 200 ) {
+
+			$errorMsg = $responseArr['result'];
+			return ["status" => false, "error_msg" => $errorMsg];
+		}
+		else {
+			return ["status" => true, "error_msg" => ''];
+		}
+
+
+	}
+
+	public function add_order_new_post()
+	{
+		$order_number = $this->generate_order_number();
+		$orderObj = $this->post('order');
+
+		if( empty($orderObj) ) {
+			$this->response( [], 404 );
+		}
+		else {
+			if(
+				! isset( $orderObj['total'] ) ||
+				! isset( $orderObj['is_takeaway'] ) ||
+				! isset( $orderObj['payment_type'] ) ||
+				! isset( $orderObj['status'] )
+			)
+			{
+				$this->response( [], 404 );
+			}
+		}
+
+		$total_amount =  $orderObj['total'];
+		$payment_type = $orderObj['payment_type'];
+		$is_takeaway = empty( $orderObj['is_takeaway'] ) ? 0 : $orderObj['is_takeaway'];
+
+
+		$productsArray =  json_decode($orderObj['products'], true);
+
+		$orderId = $this->OrdersModel->insert_order_new( $order_number, $total_amount, $payment_type, $is_takeaway );
+
+		if( $orderId > 0 )
+		{
+			foreach ( $productsArray as $productKey => $productValue ) {
+				if( !empty( json_decode($productValue['sizes'], true) ) ) {
+
+					$productName = $productValue['name'];
+					$productImage = $productValue['image'];
+					$productSize = json_decode($productValue['sizes'], true)[0];
+					$productSizeName = $productSize['size_name'];
+					$productCount = $productSize['count'];
+					$productTotal = $productSize['total_price'];
+					$productPrice = $productSize['price'];
+					$productSizeBarcode = $productSize['barkod'];
+
+					$orderItemId = $this->OrdersModel->insert_order_item_new( $productName, $productSizeName, $productImage, $productTotal, $productPrice, $productCount, $productSizeBarcode, $orderId );
+
+					if( $orderItemId > 0 ) {
+						$extras = $productSize['extras'];
+						foreach ($extras as  $extraKey => $extraValue) {
+							$extraName = $extraValue['name'];
+							$extraImage = $extraValue['image'];
+							$extraDefaultCount = $extraValue['extra_default_count'];
+							$extraCount = $extraValue['extra_count'];
+							$extraBarcode = $extraValue['barkod'];
+							$extraPrice = $extraValue['price'];
+							$extraOrderItemId = $orderItemId;
+							$itemExtraId = $this->OrdersModel->insert_order_item_extra_new( $extraName, $extraImage, $extraDefaultCount, $extraCount, $extraBarcode, $orderId, $extraOrderItemId, $extraPrice );
+
+						}
+					}
+
+				}
+
+			}
+
+			$olymposResponse = $this->add_order_to_olympos_post( $orderId );
+			if( $olymposResponse['status'] ) {
+				$this->OrdersModel->setOrderSuccess( $orderId );
+				$this->response( [ 'status' => true, 'orderNumber' => $order_number, 'orderId' => $orderId ], 200 );
+			}
+			else {
+				$errorMsg =$olymposResponse['error_msg'];
+				$this->OrdersModel->setOrderError( $orderId, $errorMsg );
+			}
+		}
+		$this->response( [ 'status' => false, 'orderNumber' => "0", 'orderId' => "0" ], 200 );
+	}
+
 	private function generate_order_number() {
 		$last_order = $this->OrdersModel->getLastOrder();
 		if( count( $last_order ) > 0 )
@@ -129,18 +269,19 @@ class Orders extends RestController {
 
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
-		curl_exec($curl);
+		$result = curl_exec($curl);
 		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
 		curl_close($curl);
 
 
-		return $httpcode;
+
+
+		return ["http_code" => $httpcode, "result" => $result];
 	}
 
 	private function getOlymposPrice( $barkod )
 	{
-//		return false;
 		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
 
 		$curl = curl_init($url);
@@ -197,6 +338,9 @@ class OlypmosOrder implements JsonSerializable {
 			'sepet' => $this->sepet
 		];
 	}
+
+
+
 
 }
 

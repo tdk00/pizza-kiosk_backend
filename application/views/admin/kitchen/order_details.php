@@ -71,30 +71,30 @@
 										</tr>
 										</thead>
 										<tbody>
-										<?php foreach ( $order_products as $product ): ?>
+										<?php foreach ( $items as $item ): ?>
 										<?php
 											$extraNameCountString = "";
-											foreach ( $product['extras'] as $extrakey => $extraValue )
+											foreach ( $item['extras'] as $extrakey => $extraValue )
 											{
-												if( $extraValue['extra_default_count'] ==  $extraValue['extra_count'] ) // extra sayinda deyishiklik edilmedise
+												if( $extraValue['itemExtraDefaultCount'] ==  $extraValue['itemExtraCount'] ) // extra sayinda deyishiklik edilmedise
 												{
 													continue;
 												}
 
-												if( $extraValue['extra_default_count'] > 0 && $extraValue['extra_count'] == 0 ) // icinde olan extralardan hansinisa 0 edibse
+												if( $extraValue['itemExtraDefaultCount'] > 0 && $extraValue['itemExtraCount'] == 0 ) // icinde olan extralardan hansinisa 0 edibse
 												{
-													$extraNameCountString .= $extraValue['extra_name']." - olmasin";
-													if( ! (count($product['extras']) == ( $extrakey + 1 )) )
+													$extraNameCountString .= $extraValue['itemExtraName']." - olmasin";
+													if( ! (count($item['extras']) == ( $extrakey + 1 )) )
 													{
 														$extraNameCountString .= ", ";
 													}
 													continue;
 												}
 
-												if( $extraValue['extra_default_count'] > 0 && $extraValue['extra_count'] < $extraValue['extra_default_count'] )
+												if( $extraValue['itemExtraDefaultCount'] > 0 && $extraValue['itemExtraCount'] < $extraValue['itemExtraDefaultCount'] )
 												{
-													$extraNameCountString .=  $extraValue['extra_name'] ." az ( ". $extraValue['extra_default_count'] ." yox  ". ( $extraValue['extra_count'] )." olsun ) ";
-													if( ! (count($product['extras']) == ( $extrakey + 1 )) )
+													$extraNameCountString .=  $extraValue['itemExtraName'] ." az ( ". $extraValue['itemExtraDefaultCount'] ." yox  ". ( $extraValue['itemExtraCount'] )." olsun ) ";
+													if( ! (count($item['extras']) == ( $extrakey + 1 )) )
 													{
 														$extraNameCountString .= ", ";
 													}
@@ -102,17 +102,17 @@
 												}
 
 
-												$extraNameCountString .= "  əlavə - ". ( $extraValue['extra_count'] - $extraValue['extra_default_count'] )." " .$extraValue['extra_name'] ."  ( ". $extraValue['extra_default_count'] ." yox  ". ( $extraValue['extra_count'] )." olsun ) " ;
-												if( ! (count($product['extras']) == ( $extrakey + 1 )) )
+												$extraNameCountString .= "  əlavə - ". ( $extraValue['itemExtraCount'] - $extraValue['itemExtraDefaultCount'] )." " .$extraValue['itemExtraName'] ."  ( ". $extraValue['itemExtraDefaultCount'] ." yox  ". ( $extraValue['itemExtraCount'] )." olsun ) " ;
+												if( ! (count($item['extras']) == ( $extrakey + 1 )) )
 												{
 													$extraNameCountString .= ", ";
 												}
 											}
 										?>
 										<tr>
-											<td><?= $product['product_count'] ?> </td>
-											<td><?= $product['product_name'] ?>
-											<td><?= $product['size_name'] ?></td>
+											<td><?= $item['item_count'] ?> </td>
+											<td><?= $item['product_name'] ?>
+											<td><?= $item['product_size_name'] ?></td>
 											<td><?= $extraNameCountString ?></td>
 											<td><?= $order_details['order_number'] ?></td>
 										</tr>

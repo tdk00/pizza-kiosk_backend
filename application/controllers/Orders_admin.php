@@ -108,6 +108,21 @@ class Orders_admin extends CI_Controller
 		}
 
 	}
+	public function order_details_new( $id )
+	{
+		$order_details = $this->AdminKitchenModel->getOrder( $id );
+		if( count( $order_details ) > 0  )
+		{
+			$orderItems = $this->AdminKitchenModel->getOrderItems( $order_details[0]["id"] );
+			foreach ( $orderItems as $itemKey => $itemValue )
+			{
+				$orderItems[$itemKey]['extras'] =  $this->AdminKitchenModel->getOrderItemsExtras( $itemValue["id"] );
+
+			}
+			$this->load->view('admin/kitchen/order_details', [ 'items' => $orderItems, "order_details" => $order_details[0] ]);
+		}
+
+	}
 
 
 }

@@ -97,7 +97,7 @@
 <script>
 	$(".orderDetailsButton").on('click', function () {
 		let order_id = $(this).data('order-id');
-		window.location.href = "<?=base_url()?>kitchen_admin/order_details/" + order_id + "";
+		window.location.href = "<?=base_url()?>kitchen_admin/order_details_new/" + order_id + "";
 	})
 </script>
 

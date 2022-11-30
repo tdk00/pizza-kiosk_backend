@@ -7,7 +7,7 @@ class Extras_model extends CI_Model
 		$this->load->helper('url');
 	}
 
-	public function getExtrasByProductId( $lang = 'az', $size_id = 0 )
+	public function getExtrasBySizeId( $lang = 'az', $size_id = 0 )
 	{
 		$this->db->select('*');
 		$this->db->select('extras.name_'.$lang.' as name');

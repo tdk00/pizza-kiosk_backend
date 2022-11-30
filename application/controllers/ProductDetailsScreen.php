@@ -43,7 +43,24 @@ class ProductDetailsScreen extends RestController {
 				}
 			}
 			$productsDetails[ $detailKey ] ['sizes'] = $productSizes;
+
+			foreach ( $productsDetails[ $detailKey ] ['sizes'] as $sizeKey => $sizeValue ){
+				$productSizesExtras = $this->ExtrasModel->getExtrasBySizeId( $lang, $sizeValue['id'] );
+				foreach ( $productSizesExtras as $extraKey => $extraValue )
+				{
+					$olymposPrice = $this->getOlymposPrice( $extraValue['barkod'] );
+					if( $olymposPrice !== false)
+					{
+						$productSizesExtras[ $extraKey ]['price'] = (string)$olymposPrice;
+					}
+				}
+				$productsDetails[ $detailKey ] ['sizes'] [ $sizeKey ] ['extras'] = $productSizesExtras;
+			}
+
 		}
+
+
+
 
 		if( count($productsDetails) > 0 )
 		{
@@ -65,7 +82,7 @@ class ProductDetailsScreen extends RestController {
 		{
 			$lang = 'az';
 		}
-		$extras = $this->ExtrasModel->getExtrasByProductId( $lang, $size_id );
+		$extras = $this->ExtrasModel->getExtrasBySizeId( $lang, $size_id );
 
 		if( count($extras) > 0 )
 		{
@@ -233,8 +250,8 @@ class ProductDetailsScreen extends RestController {
 	}
 
 	private function getOlymposPrice( $barkod )
-	{
-//		return false;
+	{/*
+		return false;*/
 		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
 
 		$curl = curl_init($url);

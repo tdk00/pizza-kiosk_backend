@@ -206,7 +206,7 @@ class MenuScreen extends RestController {
 	
 	private function getOlymposPrice( $barkod )
 	{
-//		return false;
+		return false;
 		$url = 'http://192.168.100.97:8080/ords/olympos/olympos/fiyat/' . $barkod;
 
 		$curl = curl_init($url);

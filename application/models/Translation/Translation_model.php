@@ -18,6 +18,15 @@ class Translation_model extends CI_Model
 		return count( $query->result_array() )  > 0 ? $query->result_array()[0][$lang] : "";
 	}
 
+	public function getAllTranslation( $lang = 'az' )
+	{
+		$this->db->select('*');
+		$this->db->from('translations');
+		$this->db->select($lang.' as translation');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
 
 
 }

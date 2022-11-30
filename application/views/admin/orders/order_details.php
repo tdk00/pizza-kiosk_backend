@@ -23,17 +23,20 @@
 
 	<!-- Main Sidebar Container -->
 
-	<?php $this->load->view('admin/leftMenu'); ?>
+	<?php $this->load->view('admin/leftMenuKitchen'); ?>
 
 	<!-- Content Wrapper. Contains page content -->
 	<div class="content-wrapper">
 		<!-- Content Header (Page header) -->
 		<section class="content-header">
 			<div class="container-fluid">
-				<div class="row mb-2">
-					<div class="col-sm-6">
-						<h1>Sifariş detalları - <?= $order_details['order_number'] ?> </h1>
+				<div class="row">
+					<div class="col-12">
+						<h4>
+							<i class="fas fa-globe"></i> Sifarişin məhsulları
+						</h4>
 					</div>
+					<!-- /.col -->
 				</div>
 			</div><!-- /.container-fluid -->
 		</section>
@@ -68,26 +71,51 @@
 										</tr>
 										</thead>
 										<tbody>
-										<?php foreach ( $order_products as $product ): ?>
-										<?php
+										<?php foreach ( $items as $item ): ?>
+											<?php
 											$extraNameCountString = "";
-											foreach ( $product['extras'] as $extrakey => $extraValue )
+											foreach ( $item['extras'] as $extrakey => $extraValue )
 											{
-												$extraNameCountString .= $extraValue['extra_name']." ( ". $extraValue['extra_count']." )";
-												if( ! (count($product['extras']) == ( $extrakey + 1 )) )
+												if( $extraValue['itemExtraDefaultCount'] ==  $extraValue['itemExtraCount'] ) // extra sayinda deyishiklik edilmedise
+												{
+													continue;
+												}
+
+												if( $extraValue['itemExtraDefaultCount'] > 0 && $extraValue['itemExtraCount'] == 0 ) // icinde olan extralardan hansinisa 0 edibse
+												{
+													$extraNameCountString .= $extraValue['itemExtraName']." - olmasin";
+													if( ! (count($item['extras']) == ( $extrakey + 1 )) )
+													{
+														$extraNameCountString .= ", ";
+													}
+													continue;
+												}
+
+												if( $extraValue['itemExtraDefaultCount'] > 0 && $extraValue['itemExtraCount'] < $extraValue['itemExtraDefaultCount'] )
+												{
+													$extraNameCountString .=  $extraValue['itemExtraName'] ." az ( ". $extraValue['itemExtraDefaultCount'] ." yox  ". ( $extraValue['itemExtraCount'] )." olsun ) ";
+													if( ! (count($item['extras']) == ( $extrakey + 1 )) )
+													{
+														$extraNameCountString .= ", ";
+													}
+													continue;
+												}
+
+
+												$extraNameCountString .= "  əlavə - ". ( $extraValue['itemExtraCount'] - $extraValue['itemExtraDefaultCount'] )." " .$extraValue['itemExtraName'] ."  ( ". $extraValue['itemExtraDefaultCount'] ." yox  ". ( $extraValue['itemExtraCount'] )." olsun ) " ;
+												if( ! (count($item['extras']) == ( $extrakey + 1 )) )
 												{
 													$extraNameCountString .= ", ";
 												}
 											}
-										?>
-										<tr>
-											<td><?= $product['product_count'] ?> </td>
-											<td><?= $product['product_name'] ?>
-											<td><?= $product['size_name'] ?></td>
-											<td><?= $extraNameCountString ?></td>
-											<td><?= $order_details['order_number'] ?></td>
-											<td><?= $order_details['order_number'] ?></td>
-										</tr>
+											?>
+											<tr>
+												<td><?= $item['item_count'] ?> </td>
+												<td><?= $item['product_name'] ?>
+												<td><?= $item['product_size_name'] ?></td>
+												<td><?= $extraNameCountString ?></td>
+												<td><?= $order_details['order_number'] ?></td>
+											</tr>
 										<?php endforeach; ?>
 
 										</tbody>
@@ -98,6 +126,12 @@
 							<!-- /.row -->
 
 							<!-- this row will not appear when printing -->
+							<div class="row no-print">
+								<div class="col-12">
+									<a href="<?=base_url()."/kitchen_admin/order_ready_confirm/". $order_details['id'] ?>" class="btn btn-success float-right"><i class="far fa-credit-card"></i> Hazırdır
+									</a>
+								</div>
+							</div>
 						</div>
 						<!-- /.invoice -->
 					</div><!-- /.col -->

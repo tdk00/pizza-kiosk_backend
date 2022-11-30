@@ -83,7 +83,7 @@
 												$status = "";
 										}
 										?>
-										<tr style="cursor: pointer"  onclick="window.location='<?=base_url().'orders_admin/order_details/'.$order['id']?>';">
+										<tr style="cursor: pointer"  onclick="window.location='<?=base_url().'orders_admin/order_details_new/'.$order['id']?>';">
 											<td> <?=$order['id']?> </td>
 											<td> <?=$order['order_number']?> </td>
 											<td> <?=$order['date']?> </td>

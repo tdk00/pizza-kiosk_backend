@@ -12,6 +12,7 @@ class Categories_model extends CI_Model
 			$this->db->select('name_'.$lang.' as name');
 			$this->db->select( 'CONCAT("'.base_url().'", image) as image');
 			$this->db->from('categories');
+			$this->db->order_by("is_default", "desc");
 			$query = $this->db->get();
 			return $query->result_array();
 	}

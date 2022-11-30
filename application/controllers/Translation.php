@@ -31,4 +31,24 @@ class Translation extends RestController
 			$this->response( $translation, 200 );
 		}
 	}
+
+	public function getAllTranslation_get()
+	{
+		$lang = $this->get( 'lang' );
+
+		if( ! in_array($lang, ['az', 'en', 'ru']) )
+		{
+			$this->response( [], 404 );
+		}
+		else
+		{
+//			sleep(2);
+			$result = $this->TranslationModel->getAllTranslation( $lang );
+			$translationArray = [ "defaultValue" => "defaultValue" ];
+			foreach ( $result as $translation ){
+				$translationArray[$translation['word_key']] = $translation[$lang];
+			}
+			$this->response( $translationArray, 200 );
+		}
+	}
 }

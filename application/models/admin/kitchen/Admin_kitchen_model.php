@@ -25,6 +25,46 @@ class Admin_kitchen_model extends CI_Model
 		return $query->result_array();
 	}
 
+
+	public function getOrderItems( $orderId = 0 )
+	{
+		$this->db->select('*');
+		$this->db->from('order_item');
+		$this->db->where('orderId', $orderId );
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	public function getOrderItemsExtras( $orderItemId = 0 )
+	{
+		$this->db->select('*');
+		$this->db->from('order_item_extra');
+		$this->db->where('orderItemId', $orderItemId );
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	public function getOrderProductBySessionId( $session_id = 0 )
 	{
 		$this->db->select('*');
